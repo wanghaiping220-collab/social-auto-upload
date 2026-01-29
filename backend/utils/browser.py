@@ -16,6 +16,9 @@ logger = get_logger("browser")
 USER_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "browser_data")
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 
+# 是否使用无头模式 (设置环境变量 HEADLESS=true 启用无头模式)
+HEADLESS_MODE = os.environ.get("HEADLESS", "false").lower() == "true"
+
 
 class BrowserManager:
     """浏览器管理器"""
@@ -24,6 +27,7 @@ class BrowserManager:
     _playwright = None
     _browser: Optional[Browser] = None
     _contexts: Dict[str, BrowserContext] = {}
+    _initialized = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -32,21 +36,34 @@ class BrowserManager:
 
     async def initialize(self):
         """初始化浏览器"""
-        if self._playwright is None:
-            self._playwright = await async_playwright().start()
-            logger.info("Playwright 已初始化")
+        if self._initialized:
+            return
 
-        if self._browser is None:
-            self._browser = await self._playwright.chromium.launch(
-                headless=False,  # 非无头模式，方便用户扫码
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--disable-infobars",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage"
-                ]
-            )
-            logger.info("Chromium 浏览器已启动")
+        try:
+            if self._playwright is None:
+                logger.info("正在初始化 Playwright...")
+                self._playwright = await async_playwright().start()
+                logger.info("Playwright 已初始化")
+
+            if self._browser is None:
+                logger.info(f"正在启动 Chromium 浏览器 (headless={HEADLESS_MODE})...")
+                self._browser = await self._playwright.chromium.launch(
+                    headless=HEADLESS_MODE,  # 可通过环境变量控制
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-infobars",
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--window-size=1280,800"
+                    ]
+                )
+                logger.info("Chromium 浏览器已启动")
+                self._initialized = True
+        except Exception as e:
+            logger.error(f"浏览器初始化失败: {e}")
+            logger.error("请确保已安装 Playwright 浏览器: playwright install chromium")
+            raise
 
     async def get_context(self, context_id: str, platform: str) -> BrowserContext:
         """
@@ -170,22 +187,29 @@ class QRCodeLoginSession:
             check_callback: 状态检查回调函数
         """
         try:
+            logger.info(f"正在创建登录会话: {self.session_id}, 平台: {self.platform}")
+            logger.info(f"登录页面: {qrcode_url}")
+
             self.context = await self.browser_manager.get_context(
                 self.session_id,
                 self.platform
             )
             self.page = await self.context.new_page()
 
-            await self.page.goto(qrcode_url, wait_until="networkidle")
+            logger.info("正在打开登录页面...")
+            await self.page.goto(qrcode_url, wait_until="networkidle", timeout=30000)
 
-            # 等待二维码出现
-            await asyncio.sleep(2)
+            # 等待二维码出现 (增加等待时间)
+            logger.info("等待页面加载完成...")
+            await asyncio.sleep(3)
 
-            # 截取二维码区域
+            # 截取整个页面作为二维码图片
+            logger.info("正在截取二维码...")
             self.qrcode_base64 = await self.browser_manager.screenshot_to_base64(self.page)
             self.status = "waiting"
 
             logger.info(f"二维码登录会话已启动: {self.session_id}")
+            logger.info(f"二维码图片大小: {len(self.qrcode_base64)} bytes")
 
             # 启动状态检查任务
             self._check_task = asyncio.create_task(
@@ -194,7 +218,17 @@ class QRCodeLoginSession:
 
         except Exception as e:
             self.status = "error"
-            logger.error(f"启动登录会话失败: {e}")
+            error_msg = str(e)
+            logger.error(f"启动登录会话失败: {error_msg}")
+
+            # 提供更友好的错误提示
+            if "Executable doesn't exist" in error_msg or "browserType.launch" in error_msg:
+                logger.error("请先安装 Playwright 浏览器: playwright install chromium")
+            elif "net::ERR" in error_msg:
+                logger.error("网络连接失败，请检查网络")
+            elif "Timeout" in error_msg:
+                logger.error("页面加载超时")
+
             raise
 
     async def _check_login_status(self, check_callback: Callable):
