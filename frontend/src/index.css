@@ -1,0 +1,137 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 平台标签颜色 */
+.platform-tag-douyin {
+  background: linear-gradient(135deg, #fe2c55 0%, #25f4ee 100%);
+  color: white;
+  border: none;
+}
+
+.platform-tag-weixin {
+  background: #07c160;
+  color: white;
+  border: none;
+}
+
+.platform-tag-xiaohongshu {
+  background: #ff2442;
+  color: white;
+  border: none;
+}
+
+/* 状态颜色 */
+.status-active {
+  color: #52c41a;
+}
+
+.status-inactive {
+  color: #d9d9d9;
+}
+
+.status-expired {
+  color: #faad14;
+}
+
+.status-banned {
+  color: #ff4d4f;
+}
+
+/* 发布状态 */
+.publish-pending {
+  color: #1890ff;
+}
+
+.publish-uploading {
+  color: #722ed1;
+}
+
+.publish-published {
+  color: #52c41a;
+}
+
+.publish-failed {
+  color: #ff4d4f;
+}
+
+/* 卡片悬停效果 */
+.hover-card {
+  transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 渐变背景 */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Logo 样式 */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #1890ff 0%, #722ed1 100%);
+}
+
+.logo-text {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
