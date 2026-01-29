@@ -36,5 +36,5 @@ def get_db():
 
 def init_db():
     """初始化数据库表"""
-    from backend.models import Account, Content, PublishTask
+    from backend.models import Account, Content, PublishTask, SystemLog
     Base.metadata.create_all(bind=engine)
